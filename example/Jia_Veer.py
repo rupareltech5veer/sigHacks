@@ -1,15 +1,24 @@
 import tf_example as md
+
 # import the opencv library 
 import cv2
+
 #import numpy as np
 from PIL import Image
-import time  
+import time
 
 #webhook materials
 import requests 
   
 # defining the api-endpoint  
 API_ENDPOINT = ""
+
+#vol up + down on computer imports for pycow
+from ctypes import cast, POINTER
+from comtypes import CLSCTX_ALL
+from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
+import math
+
 
 # define a video capture object 
 vid = cv2.VideoCapture(0)
@@ -56,9 +65,29 @@ while(True):
     if outputs['Prediction']=='Emergency':
         #send webhook to ifttt for light off
         #setting the api-detail
-        API_ENDPOINT = "https://maker.ifttt.com/trigger/Tv_Off/with/key/bKSRo51H7vnD0zjYNyMEuAKwnPH1fuwD5hJE08Y-VSf"
+        API_ENDPOINT = "https://maker.ifttt.com/trigger/Emergency/with/key/bKSRo51H7vnD0zjYNyMEuAKwnPH1fuwD5hJE08Y-VSf"
         # sending post request and saving response as response object 
         requests.post(url = API_ENDPOINT)
+
+    # Get default audio device using PyCAW
+    devices = AudioUtilities.GetSpeakers()
+    interface = devices.Activate(
+        IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
+    volume = cast(interface, POINTER(IAudioEndpointVolume))
+
+
+    if outputs['Prediction']=='Volume Up':
+        # Get current volume 
+        currentVolumeDb = volume.GetMasterVolumeLevel() 
+        volume.SetMasterVolumeLevel(currentVolumeDb + 15.00, None)
+        # NOTE: -10.25 dB = half volume !
+
+    if outputs['Prediction']=='Volume Down':
+        print("Volummmme DownDownDown")
+        # Get current volume 
+        currentVolumeDb = volume.GetMasterVolumeLevel()
+        volume.SetMasterVolumeLevel(currentVolumeDb - 15.00, None)
+        # NOTE: -10.25 dB = half volume !
         
     t_end = time.time() + 7
     #time.sleep(2)
